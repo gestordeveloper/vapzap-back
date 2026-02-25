@@ -16,9 +16,11 @@ export async function instanceRoutes(fastify: FastifyInstance) {
   fastify.put('/:name', InstanceController.update);
   fastify.delete('/:name', InstanceController.delete);
   fastify.get('/connect/:name', InstanceController.connect);
+  fastify.post('/disconnect/:name', InstanceController.disconnect);
   fastify.post('/webhook/:name', InstanceController.setWebhook);
   fastify.post('/sendText/:name', InstanceController.sendText);
   fastify.post('/sendImage/:name', InstanceController.sendImage);
   fastify.post('/sendVideo/:name', InstanceController.sendVideo);
   fastify.post('/sendAudio/:name', InstanceController.sendAudio);
+  fastify.post('/sendDocument/:name', InstanceController.sendDocument);
 }

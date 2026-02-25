@@ -157,12 +157,30 @@ export class WhatsAppService {
     }
   }
 
+  static async formatJid(sock: any, number: string): Promise<string> {
+    if (number.includes('@g.us') || number.includes('@s.whatsapp.net')) return number;
+    
+    const cleanNumber = number.replace(/\D/g, '');
+    
+    // Use Baileys to resolve the exact JID from WhatsApp servers (handles BR 9th digit automatically)
+    try {
+      const [result] = await sock.onWhatsApp(cleanNumber);
+      if (result && result.exists) {
+        return result.jid;
+      }
+    } catch (e) {
+      console.error(`[WhatsApp] Failed to resolve JID for ${cleanNumber}:`, e);
+    }
+    
+    // Fallback if not found on server
+    return `${cleanNumber}@s.whatsapp.net`;
+  }
+
   static async sendText(instanceName: string, number: string, text: string) {
     const sock = this.getSession(instanceName);
     if (!sock) throw new Error('Instance not connected.');
     
-    // Format number to JID
-    const jid = number.includes('@s.whatsapp.net') ? number : `${number}@s.whatsapp.net`;
+    const jid = await this.formatJid(sock, number);
     
     const result = await sock.sendMessage(jid, { text });
     return result;
@@ -172,7 +190,7 @@ export class WhatsAppService {
     const sock = this.getSession(instanceName);
     if (!sock) throw new Error('Instance not connected.');
     
-    const jid = number.includes('@s.whatsapp.net') ? number : `${number}@s.whatsapp.net`;
+    const jid = await this.formatJid(sock, number);
     return await sock.sendMessage(jid, { image: { url }, caption });
   }
 
@@ -180,7 +198,7 @@ export class WhatsAppService {
     const sock = this.getSession(instanceName);
     if (!sock) throw new Error('Instance not connected.');
     
-    const jid = number.includes('@s.whatsapp.net') ? number : `${number}@s.whatsapp.net`;
+    const jid = await this.formatJid(sock, number);
     return await sock.sendMessage(jid, { video: { url }, caption });
   }
 
@@ -188,9 +206,17 @@ export class WhatsAppService {
     const sock = this.getSession(instanceName);
     if (!sock) throw new Error('Instance not connected.');
     
-    const jid = number.includes('@s.whatsapp.net') ? number : `${number}@s.whatsapp.net`;
+    const jid = await this.formatJid(sock, number);
     // ptt: true ensures it plays as a voice note in the recipient's phone
     return await sock.sendMessage(jid, { audio: { url }, mimetype: 'audio/mp4', ptt: true });
+  }
+
+  static async sendDocument(instanceName: string, number: string, url: string, mimetype: string, fileName: string, caption?: string) {
+    const sock = this.getSession(instanceName);
+    if (!sock) throw new Error('Instance not connected.');
+    
+    const jid = await this.formatJid(sock, number);
+    return await sock.sendMessage(jid, { document: { url }, mimetype, fileName, caption });
   }
 
   // --- Group Management Methods --- //
@@ -198,7 +224,9 @@ export class WhatsAppService {
   static async createGroup(instanceName: string, subject: string, participants: string[]) {
     const sock = this.getSession(instanceName);
     if (!sock) throw new Error('Instance not connected.');
-    const jids = participants.map(p => p.includes('@s.whatsapp.net') ? p : `${p}@s.whatsapp.net`);
+    
+    // Format all participants properly
+    const jids = await Promise.all(participants.map(p => this.formatJid(sock, p)));
     return await sock.groupCreate(subject, jids);
   }
 
@@ -229,7 +257,9 @@ export class WhatsAppService {
     const sock = this.getSession(instanceName);
     if (!sock) throw new Error('Instance not connected.');
     const jid = groupId.includes('@g.us') ? groupId : `${groupId}@g.us`;
-    const jids = participants.map(p => p.includes('@s.whatsapp.net') ? p : `${p}@s.whatsapp.net`);
+    
+    // Format all participants properly
+    const jids = await Promise.all(participants.map(p => this.formatJid(sock, p)));
     return await sock.groupParticipantsUpdate(jid, jids, action);
   }
 

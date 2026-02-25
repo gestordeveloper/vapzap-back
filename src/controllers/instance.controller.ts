@@ -98,6 +98,30 @@ export class InstanceController {
     }
   }
 
+  static async disconnect(request: FastifyRequest, reply: FastifyReply) {
+    const { name } = request.params as { name: string };
+    const user = request.user as { id: string };
+
+    try {
+      const instance = await prisma.instance.findUnique({ where: { name } });
+      if (!instance) return reply.status(404).send({ error: 'Instance not found' });
+      if (instance.userId !== user.id) return reply.status(403).send({ error: 'Unauthorized' });
+
+      // Clean up WhatsApp session locally
+      await WhatsAppService.deleteSession(name);
+
+      // Update instance status in DB
+      const updated = await prisma.instance.update({
+        where: { name },
+        data: { status: 'DISCONNECTED' }
+      });
+
+      return reply.send({ message: 'Instance disconnected successfully', instance: updated });
+    } catch (e: any) {
+      return reply.status(500).send({ error: 'Failed to disconnect instance', details: e.message });
+    }
+  }
+
   static async connect(request: FastifyRequest, reply: FastifyReply) {
     const { name } = request.params as { name: string };
     const user = request.user as { id: string };
@@ -215,6 +239,27 @@ export class InstanceController {
       return reply.send({ message: 'Audio sent', result });
     } catch (e: any) {
       return reply.status(500).send({ error: 'Failed to send audio', details: e.message });
+    }
+  }
+
+  static async sendDocument(request: FastifyRequest, reply: FastifyReply) {
+    const { name } = request.params as { name: string };
+    const { number, url, mimetype, fileName, caption } = request.body as { number: string, url: string, mimetype: string, fileName: string, caption?: string };
+    const user = request.user as { id: string };
+
+    if (!number || !url || !mimetype || !fileName) {
+        return reply.status(400).send({ error: 'Os campos number, url, mimetype e fileName são obrigatórios.' });
+    }
+
+    try {
+      const instance = await prisma.instance.findUnique({ where: { name } });
+      if (!instance) return reply.status(404).send({ error: 'Instance not found' });
+      if (instance.userId !== user.id) return reply.status(403).send({ error: 'Unauthorized' });
+
+      const result = await WhatsAppService.sendDocument(name, number, url, mimetype, fileName, caption);
+      return reply.send({ message: 'Document sent', result });
+    } catch (e: any) {
+      return reply.status(500).send({ error: 'Failed to send document', details: e.message });
     }
   }
 }
