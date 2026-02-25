@@ -19,10 +19,11 @@ model User {
 model Instance {
   id         String   @id @default(uuid())
   name       String   @unique
-  status     String   @default("DISCONNECTED") // DISCONNECTED, CONNECTING, CONNECTED
-  webhookUrl String?
-  userId     String?
-  user       User?    @relation(fields: [userId], references: [id])
+  status        String   @default("DISCONNECTED") // DISCONNECTED, CONNECTING, CONNECTED
+  webhookUrl    String?
+  webhookEvents String[] @default([])
+  userId        String?
+  user          User?    @relation(fields: [userId], references: [id])
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }

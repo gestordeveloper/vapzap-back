@@ -136,6 +136,27 @@ export class WhatsAppService {
     return this.sessions.get(instanceName);
   }
 
+  static async deleteSession(instanceName: string) {
+    const sock = this.getSession(instanceName);
+    if (sock) {
+      try {
+        await sock.logout();
+      } catch (e) {
+        console.error(`[WhatsApp] Error logging out instance ${instanceName}:`, e);
+      }
+    }
+    
+    this.sessions.delete(instanceName);
+    const sessionDir = path.join(process.cwd(), 'sessions', instanceName);
+    try {
+      if (fs.existsSync(sessionDir)) {
+        fs.rmSync(sessionDir, { recursive: true, force: true });
+      }
+    } catch (err) {
+      console.error(`[WhatsApp] Failed to delete session dir for ${instanceName}:`, err);
+    }
+  }
+
   static async sendText(instanceName: string, number: string, text: string) {
     const sock = this.getSession(instanceName);
     if (!sock) throw new Error('Instance not connected.');

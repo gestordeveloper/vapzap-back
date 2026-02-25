@@ -18,6 +18,11 @@ export class WebhookService {
         return; // No webhook registered or instance not found
       }
 
+      // Check if event is subscribed
+      if (!instance.webhookEvents || !instance.webhookEvents.includes(eventName)) {
+        return; // Event not explicitly subscribed
+      }
+
       await axios.post(instance.webhookUrl, {
         instance: instanceName,
         event: eventName,

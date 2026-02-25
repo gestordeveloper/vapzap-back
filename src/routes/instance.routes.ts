@@ -14,6 +14,7 @@ export async function instanceRoutes(fastify: FastifyInstance) {
   fastify.post('/create', InstanceController.create);
   fastify.get('/:name', InstanceController.getOne);
   fastify.put('/:name', InstanceController.update);
+  fastify.delete('/:name', InstanceController.delete);
   fastify.get('/connect/:name', InstanceController.connect);
   fastify.post('/webhook/:name', InstanceController.setWebhook);
   fastify.post('/sendText/:name', InstanceController.sendText);

@@ -11,6 +11,7 @@ const app = Fastify({
 
 app.register(cors, {
   origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 });
 
 app.register(fastifyJwt, {

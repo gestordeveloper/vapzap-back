@@ -54,6 +54,29 @@ export class InstanceController {
       return reply.status(500).send({ error: 'Failed to update instance', details: e.message });
     }
   }
+
+  static async delete(request: FastifyRequest, reply: FastifyReply) {
+    const { name } = request.params as { name: string };
+    const user = request.user as { id: string };
+
+    try {
+      const instance = await prisma.instance.findUnique({ where: { name } });
+      if (!instance) return reply.status(404).send({ error: 'Instance not found' });
+      if (instance.userId !== user.id) return reply.status(403).send({ error: 'Unauthorized' });
+
+      // Clean up WhatsApp session files and connection
+      await WhatsAppService.deleteSession(name);
+
+      // Delete from Database
+      await prisma.instance.delete({
+        where: { name }
+      });
+
+      return reply.send({ message: 'Instance deleted successfully' });
+    } catch (e: any) {
+      return reply.status(500).send({ error: 'Failed to delete instance', details: e.message });
+    }
+  }
   
   static async create(request: FastifyRequest, reply: FastifyReply) {
     const { name } = request.body as { name: string };
@@ -93,19 +116,22 @@ export class InstanceController {
 
   static async setWebhook(request: FastifyRequest, reply: FastifyReply) {
     const { name } = request.params as { name: string };
-    const { webhookUrl } = request.body as { webhookUrl: string };
+    const { webhookUrl, webhookEvents } = request.body as { webhookUrl: string, webhookEvents?: string[] };
     const user = request.user as { id: string };
 
     const instance = await prisma.instance.findUnique({ where: { name } });
     if (!instance) return reply.status(404).send({ error: 'Instance not found' });
     if (instance.userId !== user.id) return reply.status(403).send({ error: 'Unauthorized' });
 
-    await prisma.instance.update({
+    const updated = await prisma.instance.update({
       where: { name },
-      data: { webhookUrl }
+      data: { 
+        webhookUrl,
+        webhookEvents: webhookEvents || []
+      }
     });
 
-    return reply.send({ message: 'Webhook updated successfully', webhookUrl });
+    return reply.send({ message: 'Webhook updated successfully', webhookUrl: updated.webhookUrl, webhookEvents: updated.webhookEvents });
   }
 
   static async sendText(request: FastifyRequest, reply: FastifyReply) {
