@@ -11,7 +11,8 @@ export class WebhookService {
   static async dispatch(instanceName: string, eventName: string, payload: any) {
     try {
       const instance = await prisma.instance.findUnique({
-        where: { name: instanceName }
+        where: { name: instanceName },
+        include: { agent: true, user: true }
       });
 
       if (!instance || !instance.webhookUrl) {
@@ -23,11 +24,29 @@ export class WebhookService {
         return; // Event not explicitly subscribed
       }
 
-      await axios.post(instance.webhookUrl, {
+      let dataToSend: any = {
         instance: instanceName,
         event: eventName,
         data: payload
-      });
+      };
+
+      if (instance.webhookEvents.includes('send_agent_data')) {
+         dataToSend.agent = instance.agent || null;
+         dataToSend.connection = {
+           id: instance.id,
+           name: instance.name,
+           status: instance.status
+         };
+         if (instance.user) {
+             dataToSend.user = {
+                 id: instance.user.id,
+                 name: instance.user.name,
+                 email: instance.user.email
+             };
+         }
+      }
+
+      await axios.post(instance.webhookUrl, dataToSend);
 
     } catch (error: any) {
       console.error(`[Webhook Dispatch Error] Instance: ${instanceName} | Event: ${eventName}`, error.message);

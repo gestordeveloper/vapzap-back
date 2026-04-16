@@ -23,4 +23,7 @@ export async function instanceRoutes(fastify: FastifyInstance) {
   fastify.post('/sendVideo/:name', InstanceController.sendVideo);
   fastify.post('/sendAudio/:name', InstanceController.sendAudio);
   fastify.post('/sendDocument/:name', InstanceController.sendDocument);
+  
+  fastify.get('/agent/:name', InstanceController.getAgent);
+  fastify.post('/agent/:name', InstanceController.setAgent);
 }

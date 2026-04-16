@@ -158,6 +158,50 @@ export class InstanceController {
     return reply.send({ message: 'Webhook updated successfully', webhookUrl: updated.webhookUrl, webhookEvents: updated.webhookEvents });
   }
 
+  static async getAgent(request: FastifyRequest, reply: FastifyReply) {
+    const { name } = request.params as { name: string };
+    const user = request.user as { id: string };
+
+    const instance = await prisma.instance.findUnique({ 
+        where: { name },
+        include: { agent: true }
+    });
+    
+    if (!instance) return reply.status(404).send({ error: 'Instance not found' });
+    if (instance.userId !== user.id) return reply.status(403).send({ error: 'Unauthorized' });
+
+    return reply.send(instance.agent || { name: 'Agente IA', objective: '', process: '', observations: '' });
+  }
+
+  static async setAgent(request: FastifyRequest, reply: FastifyReply) {
+    const { name } = request.params as { name: string };
+    const { agentName, objective, process: agentProcess, observations } = request.body as any;
+    const user = request.user as { id: string };
+
+    const instance = await prisma.instance.findUnique({ where: { name } });
+    if (!instance) return reply.status(404).send({ error: 'Instance not found' });
+    if (instance.userId !== user.id) return reply.status(403).send({ error: 'Unauthorized' });
+
+    const agent = await prisma.agent.upsert({
+      where: { instanceId: instance.id },
+      create: {
+        instanceId: instance.id,
+        name: agentName,
+        objective: objective,
+        process: agentProcess,
+        observations: observations
+      },
+      update: {
+        name: agentName,
+        objective: objective,
+        process: agentProcess,
+        observations: observations
+      }
+    });
+
+    return reply.send(agent);
+  }
+
   static async sendText(request: FastifyRequest, reply: FastifyReply) {
     const { name } = request.params as { name: string };
     const { number, text } = request.body as { number: string, text: string };
