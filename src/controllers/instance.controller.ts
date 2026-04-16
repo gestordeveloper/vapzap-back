@@ -170,12 +170,12 @@ export class InstanceController {
     if (!instance) return reply.status(404).send({ error: 'Instance not found' });
     if (instance.userId !== user.id) return reply.status(403).send({ error: 'Unauthorized' });
 
-    return reply.send(instance.agent || { name: 'Agente IA', objective: '', process: '', observations: '' });
+    return reply.send(instance.agent || { name: 'Agente IA', objective: '', process: '', observations: '', isActive: true });
   }
 
   static async setAgent(request: FastifyRequest, reply: FastifyReply) {
     const { name } = request.params as { name: string };
-    const { agentName, objective, process: agentProcess, observations } = request.body as any;
+    const { agentName, objective, process: agentProcess, observations, isActive } = request.body as any;
     const user = request.user as { id: string };
 
     const instance = await prisma.instance.findUnique({ where: { name } });
@@ -189,13 +189,15 @@ export class InstanceController {
         name: agentName,
         objective: objective,
         process: agentProcess,
-        observations: observations
+        observations: observations,
+        isActive: isActive !== undefined ? isActive : true
       },
       update: {
         name: agentName,
         objective: objective,
         process: agentProcess,
-        observations: observations
+        observations: observations,
+        isActive: isActive !== undefined ? isActive : true
       }
     });
 
