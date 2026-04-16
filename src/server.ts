@@ -3,7 +3,9 @@ import cors from '@fastify/cors';
 import { instanceRoutes } from './routes/instance.routes';
 import { groupRoutes } from './routes/group.routes';
 import { authRoutes } from './routes/auth.routes';
+import { chatRoutes } from './routes/chat.routes';
 import fastifyJwt from '@fastify/jwt';
+import fastifyMultipart from '@fastify/multipart';
 
 const app = Fastify({
   logger: true,
@@ -18,9 +20,16 @@ app.register(fastifyJwt, {
   secret: process.env.JWT_SECRET || 'supersecretvapzap'
 });
 
+app.register(fastifyMultipart, {
+  limits: {
+    fileSize: 50 * 1024 * 1024 // 50MB limit
+  }
+});
+
 app.register(authRoutes, { prefix: '/auth' });
 app.register(instanceRoutes, { prefix: '/instance' });
 app.register(groupRoutes, { prefix: '/group' });
+app.register(chatRoutes, { prefix: '/chat' });
 
 import { WhatsAppService } from './services/whatsapp.service';
 

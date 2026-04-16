@@ -2,6 +2,7 @@ import { makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaile
 import { Boom } from '@hapi/boom';
 import * as QRCode from 'qrcode';
 import { WebhookService } from './webhook.service';
+import { ChatService } from './chat.service';
 import { prisma } from '../prisma';
 import fs from 'fs';
 import path from 'path';
@@ -127,7 +128,8 @@ export class WhatsAppService {
 
       // Listen to messages
       sock.ev.on('messages.upsert', async (m) => {
-        await WebhookService.dispatch(instanceName, 'messages.upsert', m).catch(console.error);;
+        await ChatService.handleIncomingMessage(instanceName, m).catch(console.error);
+        await WebhookService.dispatch(instanceName, 'messages.upsert', m).catch(console.error);
       });
     });
   }
@@ -158,7 +160,10 @@ export class WhatsAppService {
   }
 
   static async formatJid(sock: any, number: string): Promise<string> {
-    if (number.includes('@g.us') || number.includes('@s.whatsapp.net')) return number;
+    if (!number) return '';
+    if (number.includes('@g.us') || number.includes('@s.whatsapp.net') || number.includes('@lid') || number.includes('@broadcast')) {
+      return number;
+    }
     
     const cleanNumber = number.replace(/\D/g, '');
     

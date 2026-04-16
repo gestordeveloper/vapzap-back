@@ -24,6 +24,44 @@ model Instance {
   webhookEvents String[] @default([])
   userId        String?
   user          User?    @relation(fields: [userId], references: [id])
+  chats         Chat[]
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+}
+
+model Chat {
+  id            String    @id @default(uuid())
+  instanceId    String
+  instance      Instance  @relation(fields: [instanceId], references: [id], onDelete: Cascade)
+  remoteJid     String
+  name          String?   // Contact or group name
+  profilePicUrl String?   // Contact or group profile picture URL
+  unreadCount   Int       @default(0)
+  lastMessageAt DateTime  @default(now())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  messages      Message[]
+
+  @@unique([instanceId, remoteJid])
+}
+
+model Message {
+  id            String   @id @default(uuid())
+  chatId        String
+  chat          Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  messageId     String   // Message ID from WhatsApp/Baileys
+  text          String?
+  type          String   // 'text', 'image', 'video', 'audio', 'document', 'sticker', etc.
+  mediaUrl      String?  // Local server path to media file
+  mimetype      String?
+  fromMe        Boolean  @default(false)
+  participant   String?  // Sender JID in groups
+  participantName String? // Sender Name
+  participantThumb String? // Sender Profile picture url
+  timestamp     DateTime @default(now())
+  status        String   @default("PENDING") // PENDING, SENT, DELIVERED, READ, FAILED
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([chatId, messageId])
 }
