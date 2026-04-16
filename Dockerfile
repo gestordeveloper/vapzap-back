@@ -32,7 +32,9 @@ COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
 
+RUN npm install -g prisma
+
 EXPOSE 3000
 
-# Executa o servidor
-CMD ["npm", "start"]
+# Sincroniza o banco e executa o servidor
+CMD ["sh", "-c", "npx prisma db push --accept-data-loss && npm start"]

@@ -74,7 +74,12 @@ export class WhatsAppService {
           isResolved = true;
           // Send QR Code to frontend
           try {
-             qrCodeBase64 = await QRCode.toDataURL(qr);
+             qrCodeBase64 = await QRCode.toDataURL(qr, {
+               color: {
+                 dark: '#25D366', // Brand color
+                 light: '#FFFFFF'
+               }
+             });
              resolve(qrCodeBase64);
           } catch (err) {
              reject(new Error('Erro ao converter QR Code para imagem.'));
