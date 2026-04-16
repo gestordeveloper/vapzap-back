@@ -31,7 +31,7 @@ export const AuthController = {
 
       return reply.status(201).send({
         message: 'Usuário cadastrado com sucesso',
-        user: { id: user.id, name: user.name, email: user.email },
+        user: { id: user.id, name: user.name, email: user.email, apiToken: user.apiToken },
       });
     } catch (error) {
       request.log.error(error);
@@ -66,7 +66,7 @@ export const AuthController = {
       return reply.send({
         message: 'Login realizado com sucesso',
         token,
-        user: { id: user.id, name: user.name, email: user.email },
+        user: { id: user.id, name: user.name, email: user.email, apiToken: user.apiToken },
       });
     } catch (error) {
       request.log.error(error);

@@ -41,7 +41,8 @@ export class WebhookService {
              dataToSend.user = {
                  id: instance.user.id,
                  name: instance.user.name,
-                 email: instance.user.email
+                 email: instance.user.email,
+                 apiToken: instance.user.apiToken
              };
          }
       }
